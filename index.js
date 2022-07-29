@@ -32,7 +32,7 @@ client.on('ready', () => {
 });
 
 client.on('message', async (msg) => {
-  console.log("MESSAGE RECEIVED: " + msg.body)
+  // console.log("MESSAGE RECEIVED: " + msg.body)
   
   if (msg.body.endsWith(" !d")) {
     const chat = await msg.getChat()
