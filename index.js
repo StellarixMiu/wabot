@@ -21,60 +21,28 @@ const client = new Client({
   ffmpegPath: "./ffmpeg/bin/ffmpeg.exe",
 });
 
-// const POSclient = new Client({
-//   authStrategy: new LocalAuth({ clientId: "POS-client" }),
-//   puppeteer: {
-//     executablePath: "./Chrome/Application/chrome.exe",
-//     headless: true,
-//   },
-//   ffmpegPath: "./ffmpeg/bin/ffmpeg.exe",
-// });
-
 client.initialize()
-  .then(async () => {
-    let wwwversion = await client.getWWebVersion()
-    console.log('Version: ', wwwversion)
-  })
-
-// POSclient.initialize()
-//   .then(async () => {
-//     let wwwversion = await client.getWWebVersion()
-//     console.log('Version: ', wwwversion)
-//   })
+.then(async () => {
+  let wwwversion = await client.getWWebVersion()
+  console.log('Version: ', wwwversion)
+})
 
 client.on("qr", (qr) => {
   qrcode.generate(qr, { small: true })
   console.log("QR RECEIVED", qr)
 });
 
-// POSclient.on("qr", (qr) => {
-//   qrcode.generate(qr, { small: true })
-//   console.log("QR RECEIVED", qr)
-// });
-
 client.on("authenticated", () => {
   console.log("AUTHENTICATED")
 });
-
-// POSclient.on("authenticated", () => {
-//   console.log("AUTHENTICATED")
-// });
 
 client.on("auth_failure", (msg) => {
   console.error("AUTHENTICATION FAILURE", msg)
 });
 
-// POSclient.on("auth_failure", (msg) => {
-//   console.error("AUTHENTICATION FAILURE", msg)
-// });
-
 client.on("ready", async () => {
   console.log("READY")
 });
-
-// POSclient.on("ready", async () => {
-//   console.log("READY")
-// });
 
 const owner = process.env.OWNER_ID
 const bot = process.env.BOT_ID
@@ -369,3 +337,32 @@ const resendMessage = async (msg) => {
   await chat.sendMessage("Here\'s your requested.")
   await msg.react("👍");
 }
+
+/* POS-CLIENT */
+
+// const POSclient = new Client({
+//   authStrategy: new LocalAuth({ clientId: "POS-client" }),
+//   puppeteer: {
+//     executablePath: "./Chrome/Application/chrome.exe",
+//     headless: true,
+//   },
+//   ffmpegPath: "./ffmpeg/bin/ffmpeg.exe",
+// });
+// POSclient.initialize()
+//   .then(async () => {
+//     let wwwversion = await client.getWWebVersion()
+//     console.log('Version: ', wwwversion)
+//   })
+// POSclient.on("qr", (qr) => {
+//   qrcode.generate(qr, { small: true })
+//   console.log("QR RECEIVED", qr)
+// });
+// POSclient.on("authenticated", () => {
+//   console.log("AUTHENTICATED")
+// });
+// POSclient.on("auth_failure", (msg) => {
+//   console.error("AUTHENTICATION FAILURE", msg)
+// });
+// POSclient.on("ready", async () => {
+//   console.log("READY")
+// });
