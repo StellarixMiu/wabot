@@ -83,7 +83,7 @@ let buttonsMenu = [
   {
     body: 'Downloader',
     id: 'downloaderIDs',
-    desc: "Tiktok video🟢\nTiktok story🔴\nTiktok multi image🔴\nIG stories🟢\nIG TV/REELS🟢\nIG post🟡\nTwitter video🟢\nTwitter img🟡\nYoutube🔴",
+    desc: "Tiktok video🟢\nTiktok story🔴\nTiktok multi image🔴\nIG stories🟢\nIG TV/REELS🟢\nIG post🟡\nTwitter video🟢\nTwitter image🔴\nYoutube🔴",
     howTo: "Untuk menggunakan command ini silahkan sertakan link dan diakhiri dengan !d",
     examplePics: "./img/downloaderIDs.jpg",
   },
@@ -136,7 +136,6 @@ client.on("message", async (msg) => {
           client.once("message", async (ownerMsg) => {
             if (ownerMsg.from === owner || ownerMsg.author === owner) {
               message = ownerMsg.body
-              await ownerMsg.reply(message)
               for (let i = 0; i < chatIDs.length; i++) {
                 await client.sendMessage(chatIDs[i], "📢 *Broadcast dari Developer* 📢")
                 await client.sendMessage(chatIDs[i], message)
@@ -173,6 +172,7 @@ client.on("message", async (msg) => {
     }
 
     if (msg.from !== "status@broadcast") {
+      console.log(msg)
       //RECEIVED MSG
       if (RECEIVED === "MENU") {
         const button = []
