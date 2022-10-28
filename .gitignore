@@ -1,4 +1,5 @@
 .wwebjs_auth
+.env
 Chrome
 ffmpeg
 node_modules
