@@ -44,7 +44,6 @@ client.on("ready", async () => {
 });
 
 const owner = process.env.OWNER_ID
-const bot = process.env.BOT_ID
 
 let buttonsMenu = [
   {
