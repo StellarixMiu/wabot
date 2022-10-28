@@ -3,12 +3,12 @@ const puppeteer = require("puppeteer");
 
 async function tiktokDownload(link) {
   try {
-    const preparePageForTests = async (page) => {
-      const userAgent =
-        "Mozilla/5.0 (X11; Linux x86_64)" +
-        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.39 Safari/537.36";
-      await page.setUserAgent(userAgent);
-    };
+    // const preparePageForTests = async (page) => {
+    //   const userAgent =
+    //     "Mozilla/5.0 (X11; Linux x86_64)" +
+    //     "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.39 Safari/537.36";
+    //   await page.setUserAgent(userAgent);
+    // };
 
     const browser = await puppeteer.launch({
       args: ["--no-sandbox", "--disable-setuid-sandbox", "--use-gl=egl"],
@@ -64,12 +64,6 @@ async function tiktokProfile(username) {
       headless: true,
     });
 
-    const page = await browser.newPage();
-    await preparePageForTests(page);
-    await page.goto(url);
-
-    await autoScroll(page);
-
     async function autoScroll(page) {
       await page.evaluate(async () => {
         await new Promise((resolve, reject) => {
@@ -89,18 +83,24 @@ async function tiktokProfile(username) {
       });
     }
 
+    const page = await browser.newPage();
+    await preparePageForTests(page);
+    await page.goto(url);
+
+    await autoScroll(page);
+
     const profileHandles = await page.$$(
       "div.tiktok-1g04lal-DivShareLayoutHeader-StyledDivShareLayoutHeaderV2"
     );
     const videoHandles = await page.$$("div.tiktok-x6y88p-DivItemContainerV2");
 
     let profile = {
-      Title : "",
-      Subtitle : "",
-      Following : "",
-      Followers : "",
-      Likes : "",
-      Bio : "",
+      Title: "",
+      Subtitle: "",
+      Following: "",
+      Followers: "",
+      Likes: "",
+      Bio: "",
     };
     let videos = [];
 
@@ -161,27 +161,26 @@ async function tiktokProfile(username) {
 
       try {
         userBio = await page.evaluate(
-          (el) =>
-            el.querySelector(" h2.tiktok-b1wpe9-H2ShareDesc "),
+          (el) => el.querySelector(" h2.tiktok-b1wpe9-H2ShareDesc "),
           profilehandle
         );
-        if(userBio !== null){
-					userBio.textContent
-				} else {
-					userBio = ""
-				}
+        if (userBio !== null) {
+          userBio.textContent;
+        } else {
+          userBio = "";
+        }
       } catch (error) {
         console.log(error);
       }
 
       profile = {
-        Title : userTitle,
-        Subtitle : userSubtitle,
-        Following : userFollowing,
-        Followers : userFollowers,
-        Likes : userLikes,
-        Bio : userBio,
-      }
+        Title: userTitle,
+        Subtitle: userSubtitle,
+        Following: userFollowing,
+        Followers: userFollowers,
+        Likes: userLikes,
+        Bio: userBio,
+      };
     }
 
     for (const videoHandle of videoHandles) {
@@ -215,11 +214,11 @@ async function tiktokProfile(username) {
               .getAttribute("title"),
           videoHandle
         );
-        if(videoTitle !== null){
-					videoTitle.textContent
-				} else {
-					videoTitle = ""
-				}
+        if (videoTitle !== null) {
+          videoTitle.textContent;
+        } else {
+          videoTitle = "";
+        }
       } catch (error) {
         console.log(error);
       }
@@ -233,18 +232,49 @@ async function tiktokProfile(username) {
 
     const Profile = {
       profile: profile,
-      videos: videos
-    }
+      videos: videos,
+    };
 
     await page.close();
     await browser.close();
-    return Profile
+    return Profile;
   } catch (err) {
-    console.log(err)
+    console.log(err);
+  }
+}
+async function storyDownload(link) {
+  try {
+    let responseLink = ""
+
+    const browser = await puppeteer.launch({
+      executablePath: "./Chrome/Application/chrome.exe",
+      headless: false,
+    });
+    const page = await browser.newPage();
+
+    await page.setJavaScriptEnabled(true)
+    await page.goto("https://ttsave.app/", {
+      waituntil: 'domcontentloaded'
+    });
+
+    await page.type("input.h-full.w-full", link);
+    await page.click('[id="btn-download"]')
+    await page.waitForSelector("#button-download-ready > a:nth-child(1)")
+      .then(async (response) => {
+        const mp4Link = await page.$eval("#button-download-ready > a:nth-child(1)", (el) => el.getAttribute("href"));
+        return responseLink = mp4Link
+      })
+
+    await page.close();
+    await browser.close();
+    return responseLink
+  } catch (err) {
+    return err
   }
 }
 
 module.exports = {
   tiktokDownload,
   tiktokProfile,
+  storyDownload,
 };

@@ -7,7 +7,6 @@ const {
 } = require("whatsapp-web.js")
 const qrcode = require("qrcode-terminal")
 const fse = require("fs-extra")
-// const { tiktokDownload, tiktokProfile } = require("./function/Tiktok.js")
 const { VideoDownload } = require("./function/Downloader.js")
 require("dotenv").config()
 
@@ -22,10 +21,10 @@ const client = new Client({
 });
 
 client.initialize()
-.then(async () => {
-  let wwwversion = await client.getWWebVersion()
-  console.log('Version: ', wwwversion)
-})
+  .then(async () => {
+    let wwwversion = await client.getWWebVersion()
+    console.log('Version: ', wwwversion)
+  })
 
 client.on("qr", (qr) => {
   qrcode.generate(qr, { small: true })
@@ -77,12 +76,6 @@ let buttonsMenu = [
   //   examplePics: "",
   // },
 ]
-
-let DownloadRequestID = ""
-let ResendRequestID = ""
-let url = []
-let listContents = []
-let buttonContents = []
 
 client.on("message", async (msg) => {
   const RECEIVED = msg.body.toUpperCase()
@@ -140,7 +133,6 @@ client.on("message", async (msg) => {
     }
 
     if (msg.from !== "status@broadcast") {
-      console.log(msg)
       //RECEIVED MSG
       if (RECEIVED === "MENU") {
         const button = []
@@ -160,62 +152,20 @@ client.on("message", async (msg) => {
       } else if (RECEIVED.endsWith(" !D")) {
         const getLink = msg.body.split(" ")[0]
         let videoInfo = {}
-        let Reply = {}
-        await chat.sendStateRecording()
-        await EmptyDownloads()
-
-        DownloadRequestID = chat.id._serialized
         await VideoDownload(getLink)
           .then((response) => videoInfo = response)
+        await chat.sendStateRecording()
 
         if (videoInfo === undefined) return chat.sendMessage("Invalid video!!")
+        if (videoInfo.hosting === "101") return await chat.sendMessage("Maaf untuk youtube tidak bisa ❌")
 
-        if (videoInfo.hosting === "tiktok.com") {
-          url = videoInfo.url
-          for (let i = 0; i < url.length; i++) {
-            buttonContents.push({
-              body: url[i].name,
-              id: url[i].type + "Confirmed"
-            })
-          }
-          Reply = new Buttons(
-            'Download Confirmation',
-            buttonContents,
-            'Stellarix Miu',
-            'Created by Bot'
-          )
-        } else if (videoInfo.hosting === "instagram.com") {
-          url = videoInfo.url
-          buttonContents.push({
-            body: "YES",
-            id: "YesConfirmed"
-          },
-            {
-              body: "NO",
-              id: "NoConfirmed"
-            })
-          Reply = new Buttons(
-            'Download Confirmation',
-            buttonContents,
-            'Stellarix Miu',
-            'Created by Bot'
-          )
-        } else if (videoInfo.hosting === "twitter.com") {
-          url = videoInfo.url
-          for (let i = 0; i < url.length; i++) {
-            buttonContents.push({
-              body: url[i].subname,
-              id: url[i].type + "Confirmed"
-            })
-          }
-          Reply = new Buttons(
-            'Download Confirmation',
-            buttonContents,
-            'Stellarix Miu',
-            'Created by Bot'
-          )
-        } else if (videoInfo.hosting === "101") return await chat.sendMessage("Maaf untuk youtube tidak bisa ❌")
-        await chat.sendMessage(Reply)
+        const url = videoInfo.url
+        const media = await MessageMedia.fromUrl(url[0].url, {
+          unsafeMime: true,
+        })
+
+        await chat.sendMessage(media)
+        await msg.react("👍")
       } else if (RECEIVED === "!S") {
         if (!msg.hasMedia) return msg.reply("Need a media!!");
         chat.sendStateRecording();
@@ -231,15 +181,40 @@ client.on("message", async (msg) => {
       } else if (RECEIVED === "!ALL") {
         let text = "";
         let mentions = [];
+        if (!chat.isGroup) return chat.sendMessage("Hanya Bisa digunakan di grup")
         for (let participant of chat.participants) {
-
           const contact = await client.getContactById(participant.id._serialized);
-
           mentions.push(contact);
           text += `@${participant.id.user} `;
         }
         await chat.sendMessage(text, { mentions });
-      }
+      } 
+      
+      // if (RECEIVED === "!T") {
+      //   const section = {
+      //     title: "test",
+      //     rows: [
+      //       {
+      //         title: "Test 1",
+      //       },
+      //       {
+      //         title: "Test 2",
+      //         id: "test-2",
+      //       },
+      //       {
+      //         title: "Test 3",
+      //         description: "This is a smaller text field, a description",
+      //       },
+      //       {
+      //         title: "Test 4",
+      //         description: "This is a smaller text field, a description",
+      //         id: "test-4",
+      //       },
+      //     ],
+      //   };
+      //   const list = new List("test", "click me", [section], "title", "footer");
+      //   await chat.sendMessage(list);
+      // }
 
       for (const buttonMenu of buttonsMenu) {
         if (buttonMenu.id === msg.selectedButtonId) {
@@ -254,45 +229,11 @@ client.on("message", async (msg) => {
           }
         }
       }
-
-      if ((msg.from === DownloadRequestID || msg.author === DownloadRequestID) && msg.type === "buttons_response") {
-        let media = {}
-        await chat.sendStateRecording()
-
-        if (msg.body === "NO") {
-          await msg.react("❌")
-        } else {
-          for (const buttonContent of buttonContents) {
-            if (buttonContent.id === msg.selectedButtonId) {
-              for (let i = 0; i < url.length; i++) {
-                if (buttonContent.body === url[i].name || buttonContent.body === url[i].subname || buttonContent.body === "YES") {
-                  media = await MessageMedia.fromUrl(url[i].url, {
-                    unsafeMime: true,
-                  })
-                }
-              }
-            }
-          }
-          await chat.sendStateTyping()
-          await chat.sendMessage(media, {
-            sendMediaAsDocument: true,
-          })
-          await msg.react("👍")
-        }
-        await EmptyDownloads()
-      }
     }
   } catch (err) {
     console.log(err);
   }
 });
-
-const EmptyDownloads = () => {
-  DownloadRequestID = ""
-  url = []
-  listContents = []
-  buttonContents = []
-}
 
 const resendMessage = async (msg) => {
   const chat = await msg.getChat()
@@ -348,21 +289,26 @@ const resendMessage = async (msg) => {
 //   },
 //   ffmpegPath: "./ffmpeg/bin/ffmpeg.exe",
 // });
+
 // POSclient.initialize()
 //   .then(async () => {
 //     let wwwversion = await client.getWWebVersion()
 //     console.log('Version: ', wwwversion)
 //   })
+
 // POSclient.on("qr", (qr) => {
 //   qrcode.generate(qr, { small: true })
 //   console.log("QR RECEIVED", qr)
 // });
+
 // POSclient.on("authenticated", () => {
 //   console.log("AUTHENTICATED")
 // });
+
 // POSclient.on("auth_failure", (msg) => {
 //   console.error("AUTHENTICATION FAILURE", msg)
 // });
+
 // POSclient.on("ready", async () => {
 //   console.log("READY")
 // });
