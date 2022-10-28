@@ -79,6 +79,7 @@ let buttonsMenu = [
 client.on("message", async (msg) => {
   const RECEIVED = msg.body.toUpperCase()
   const chat = await msg.getChat()
+  console.log(msg.from)
 
   try {
 
@@ -128,6 +129,31 @@ client.on("message", async (msg) => {
           await msg.reply("Successfully!!")
           await msg.react("👍")
           break
+        // case "!T":
+        //   const section = {
+        //     title: "test",
+        //     rows: [
+        //       {
+        //         title: "Test 1",
+        //       },
+        //       {
+        //         title: "Test 2",
+        //         id: "test-2",
+        //       },
+        //       {
+        //         title: "Test 3",
+        //         description: "This is a smaller text field, a description",
+        //       },
+        //       {
+        //         title: "Test 4",
+        //         description: "This is a smaller text field, a description",
+        //         id: "test-4",
+        //       },
+        //     ],
+        //   };
+        //   const list = new List("test", "click me", [section], "title", "footer");
+        //   await chat.sendMessage(list);
+        //   break
       }
     }
 
@@ -187,33 +213,7 @@ client.on("message", async (msg) => {
           text += `@${participant.id.user} `;
         }
         await chat.sendMessage(text, { mentions });
-      } 
-      
-      // if (RECEIVED === "!T") {
-      //   const section = {
-      //     title: "test",
-      //     rows: [
-      //       {
-      //         title: "Test 1",
-      //       },
-      //       {
-      //         title: "Test 2",
-      //         id: "test-2",
-      //       },
-      //       {
-      //         title: "Test 3",
-      //         description: "This is a smaller text field, a description",
-      //       },
-      //       {
-      //         title: "Test 4",
-      //         description: "This is a smaller text field, a description",
-      //         id: "test-4",
-      //       },
-      //     ],
-      //   };
-      //   const list = new List("test", "click me", [section], "title", "footer");
-      //   await chat.sendMessage(list);
-      // }
+      }
 
       for (const buttonMenu of buttonsMenu) {
         if (buttonMenu.id === msg.selectedButtonId) {
