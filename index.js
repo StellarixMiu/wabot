@@ -80,7 +80,6 @@ let buttonsMenu = [
 client.on("message", async (msg) => {
   const RECEIVED = msg.body.toUpperCase()
   const chat = await msg.getChat()
-  console.log(msg.from)
 
   try {
 
