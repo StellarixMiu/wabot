@@ -44,12 +44,13 @@ client.on("ready", async () => {
 });
 
 const owner = process.env.OWNER_ID
+const bot = process.env.BOT_ID
 
 let buttonsMenu = [
   {
     body: 'Downloader',
     id: 'downloaderIDs',
-    desc: "Tiktok video🟢\nTiktok story🔴\nTiktok multi image🔴\nIG stories🟢\nIG TV/REELS🟢\nIG post🟡\nTwitter video🟢\nTwitter image🔴\nYoutube🔴",
+    desc: "Tiktok video🟢\nTiktok story🟢\nTiktok multi image🟢\nIG stories🟢\nIG TV/REELS🟢\nIG post🔴\nTwitter video🟢\nTwitter image🟢\nYoutube🔴",
     howTo: "Untuk menggunakan command ini silahkan sertakan link dan diakhiri dengan !d",
     examplePics: "./img/downloaderIDs.jpg",
   },
