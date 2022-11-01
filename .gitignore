@@ -1,6 +1,7 @@
 .wwebjs_auth
 .env
 
+Database
 Chrome
 ffmpeg
 node_modules

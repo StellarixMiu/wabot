@@ -6,8 +6,11 @@ const {
   List,
 } = require("whatsapp-web.js")
 const qrcode = require("qrcode-terminal")
-const fse = require("fs-extra")
+const { NormalizerId, TokenizerId, LangId, StemmerId  } = require('@nlpjs/lang-id');
+const { Container } = require('@nlpjs/core');
+const { SentimentAnalyzer } = require('@nlpjs/sentiment');
 const { VideoDownload } = require("./function/Downloader.js")
+const { MongoDBConnect, setDatabase } = require("./Database/Controllers/datasetBot.js")
 require("dotenv").config()
 
 const client = new Client({
@@ -19,6 +22,7 @@ const client = new Client({
   },
   ffmpegPath: "./ffmpeg/bin/ffmpeg.exe",
 });
+
 
 client.initialize()
   .then(async () => {
@@ -77,12 +81,15 @@ let buttonsMenu = [
   // },
 ]
 
+const normalizer = new NormalizerId();
+const tokenizer = new TokenizerId();
+const stemmer = new StemmerId()
+
 client.on("message", async (msg) => {
   const RECEIVED = msg.body.toUpperCase()
   const chat = await msg.getChat()
 
   try {
-
     //Owner Commands
     if (msg.from === owner || msg.author === owner) {
       const getAllChats = await client.getChats()
@@ -129,32 +136,53 @@ client.on("message", async (msg) => {
           await msg.reply("Successfully!!")
           await msg.react("👍")
           break
-        // case "!T":
-        //   const section = {
-        //     title: "test",
-        //     rows: [
-        //       {
-        //         title: "Test 1",
-        //       },
-        //       {
-        //         title: "Test 2",
-        //         id: "test-2",
-        //       },
-        //       {
-        //         title: "Test 3",
-        //         description: "This is a smaller text field, a description",
-        //       },
-        //       {
-        //         title: "Test 4",
-        //         description: "This is a smaller text field, a description",
-        //         id: "test-4",
-        //       },
-        //     ],
-        //   };
-        //   const list = new List("test", "click me", [section], "title", "footer");
-        //   await chat.sendMessage(list);
-        //   break
+        case "!T":
+          const section = {
+            title: "test",
+            rows: [
+              {
+                title: "Test 1",
+              },
+              {
+                title: "Test 2",
+                id: "test-2",
+              },
+              {
+                title: "Test 3",
+                description: "This is a smaller text field, a description",
+              },
+              {
+                title: "Test 4",
+                description: "This is a smaller text field, a description",
+                id: "test-4",
+              },
+            ],
+          };
+          const list = new List("test", "click me", [section], "title", "footer");
+          await chat.sendMessage(list);
+          break
+        case "!Q":
+          const container = new Container();
+          container.use(LangId);
+
+          const input = 'Dimanakah Anjing saya, affh iyh?';
+
+          const resultNormalizer = normalizer.normalize(input.toLocaleLowerCase());
+          const resultTokenizer = tokenizer.tokenize(resultNormalizer);
+          const resultStemmer = stemmer.stem(resultTokenizer)
+          
+          console.log(resultStemmer)
+
+          // const sentiment = new SentimentAnalyzer({ container });
+          // const result = await sentiment.process({
+          //   locale: 'id',
+          //   text: resultNormalizer,
+          // });
+          // console.log(result.sentiment);
+
+          break
       }
+
     }
 
     if (msg.from !== "status@broadcast") {
@@ -182,7 +210,7 @@ client.on("message", async (msg) => {
         await chat.sendStateRecording()
 
         if (videoInfo === undefined) return chat.sendMessage("Invalid video!!")
-        if (videoInfo.hosting === "101") return await chat.sendMessage("Maaf untuk youtube tidak bisa ❌")
+        if (videoInfo.hosting === "101") return chat.sendMessage("Maaf untuk youtube tidak bisa ❌")
 
         const url = videoInfo.url
         const media = await MessageMedia.fromUrl(url[0].url, {
