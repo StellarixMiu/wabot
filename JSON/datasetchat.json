@@ -1,0 +1,17 @@
+[
+  {
+    "tags": "greetings",
+    "patterns": ["hi", "hello", "halo" ],
+    "responses": ["hi", "hello", "halo"]
+  },
+  {
+    "tags": "introduction",
+    "patterns": ["siapa kamu", "kamu siapa"],
+    "responses": ["saya miu", "perkenalkan saya miu"]
+  },
+  {
+    "tags": "created_yourself",
+    "patterns": ["siapa pemilikmu", "siapa yang menciptakan mu", "siapa yang menciptakan kamu"],
+    "responses": ["IG: @vincentiuskris_", "krisna yang menciptakan saya", "krisna pemilik saya"]
+  }
+]
