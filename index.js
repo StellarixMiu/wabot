@@ -6,23 +6,23 @@ const {
   List,
 } = require("whatsapp-web.js")
 const qrcode = require("qrcode-terminal")
-const { NormalizerId, TokenizerId, LangId, StemmerId  } = require('@nlpjs/lang-id');
+const { NormalizerId, TokenizerId, LangId, StemmerId } = require('@nlpjs/lang-id');
 const { Container } = require('@nlpjs/core');
 const { SentimentAnalyzer } = require('@nlpjs/sentiment');
-const { VideoDownload } = require("./function/Downloader.js")
-const { MongoDBConnect, setDatabase } = require("./Database/Controllers/datasetBot.js")
-require("dotenv").config()
+const { VideoDownload } = require("./function/Downloader.js");
+const { ScrapUser } = require("./function/tiktokScrap.js");
+const { response } = require("express");
+require("dotenv").config();
 
 const client = new Client({
   authStrategy: new LocalAuth()
   ,
   puppeteer: {
-    executablePath: "./Chrome/Application/chrome.exe",
+    executablePath: "C:/Program Files/Google/Chrome/Application/chrome.exe",
     headless: true,
   },
   ffmpegPath: "./ffmpeg/bin/ffmpeg.exe",
 });
-
 
 client.initialize()
   .then(async () => {
@@ -54,7 +54,7 @@ let buttonsMenu = [
   {
     body: 'Downloader',
     id: 'downloaderIDs',
-    desc: "Tiktok video🟢\nTiktok story🟢\nTiktok multi image🟢\nIG stories🟢\nIG TV/REELS🟢\nIG post🔴\nTwitter video🟢\nTwitter image🟢\nYoutube🔴",
+    desc: "Tiktok video🟢\nTiktok story🔴\nTiktok multi image🟢\nIG stories🟢\nIG TV/REELS🟢\nIG post🔴\nTwitter video🟢\nTwitter image🟢\nYoutube🟢",
     howTo: "Untuk menggunakan command ini silahkan sertakan link dan diakhiri dengan !d",
     examplePics: "./img/downloaderIDs.jpg",
   },
@@ -72,6 +72,13 @@ let buttonsMenu = [
     howTo: "Untuk menggunakan command ini silahkan sertakan quoted pesan/reply pesan diakhiri dengan !r",
     examplePics: "./img/resendIDs.jpg",
   },
+  {
+    body: 'Search',
+    id: 'searchIDs',
+    desc: "Untuk mencari account sosial media seseorang hanya dengan username, sementara work hanya untuk tiktok",
+    howTo: "Untuk menggunakan command ini silahkan sertakan username akun ynag ingin dicari dan diakhiri dengan !search",
+    examplePics: "./img/searchIDs.jpg",
+  },
   // {
   //   body: 'Owner',
   //   id: 'ownerIDs',
@@ -80,6 +87,8 @@ let buttonsMenu = [
   //   examplePics: "",
   // },
 ]
+
+let request = []
 
 const normalizer = new NormalizerId();
 const tokenizer = new TokenizerId();
@@ -137,29 +146,44 @@ client.on("message", async (msg) => {
           await msg.react("👍")
           break
         case "!T":
+          const media = await MessageMedia.fromFilePath("./img/downloaderIDs.jpg")
+
+          const buttons_reply = new Buttons('test', [{ body: 'Test', id: 'test-1' }], 'title', 'footer') // Reply button
+
+          const buttons_media = new Buttons(media, [{ body: 'Test', id: 'test-1' }], 'title', 'footer') // Reply button
+
+          const buttons_reply_url = new Buttons('test', [{ body: 'Test', id: 'test-1' }, { body: "Test 2", url: "https://example.com/" }], 'title', 'footer') // Reply button with URL
+
+          const buttons_reply_call = new Buttons('test', [{ body: 'Test', id: 'test-1' }, { body: "Test 2 Call", url: "+62 882-2857-3141" }], 'title', 'footer') // Reply button with call button
+
+          const buttons_reply_call_url = new Buttons('test', [{ body: 'Test', id: 'test-1' }, { body: "Test 2 Call", url: "+62 882-2857-3141" }, { body: 'Test 3 URL', url: 'https://example.com/' }], 'title', 'footer') // Reply button with call button & url button
+
           const section = {
-            title: "test",
+            title: 'test',
             rows: [
               {
-                title: "Test 1",
+                title: 'Test 1',
               },
               {
-                title: "Test 2",
-                id: "test-2",
+                title: 'Test 2',
+                id: 'test-2'
               },
               {
-                title: "Test 3",
-                description: "This is a smaller text field, a description",
+                title: 'Test 3',
+                description: 'This is a smaller text field, a description'
               },
               {
-                title: "Test 4",
-                description: "This is a smaller text field, a description",
-                id: "test-4",
-              },
+                title: 'Test 4',
+                description: 'This is a smaller text field, a description',
+                id: 'test-4',
+              }
             ],
           };
-          const list = new List("test", "click me", [section], "title", "footer");
+          const list = new List('test', 'click me', [section], 'title', 'footer')
+
+          for (const component of [buttons_reply, buttons_media, buttons_reply_url, buttons_reply_call, buttons_reply_call_url]) await chat.sendMessage(component);
           await chat.sendMessage(list);
+
           break
         case "!Q":
           const container = new Container();
@@ -170,7 +194,7 @@ client.on("message", async (msg) => {
           const resultNormalizer = normalizer.normalize(input.toLocaleLowerCase());
           const resultTokenizer = tokenizer.tokenize(resultNormalizer);
           const resultStemmer = stemmer.stem(resultTokenizer)
-          
+
           console.log(resultStemmer)
 
           // const sentiment = new SentimentAnalyzer({ container });
@@ -180,6 +204,9 @@ client.on("message", async (msg) => {
           // });
           // console.log(result.sentiment);
 
+          break
+        case "TWT":
+          await msg.react("👍")
           break
       }
 
@@ -203,22 +230,80 @@ client.on("message", async (msg) => {
         )
         await chat.sendMessage(buttonsReply)
       } else if (RECEIVED.endsWith(" !D")) {
-        const getLink = msg.body.split(" ")[0]
-        let videoInfo = {}
-        await VideoDownload(getLink)
-          .then((response) => videoInfo = response)
         await chat.sendStateRecording()
+        const getLink = msg.body.split(" ")[0]
+        let videourl = []
+        try {
+          let videometa = {}
+          await VideoDownload(getLink)
+            .then((response) => videometa = response)
 
-        if (videoInfo === undefined) return chat.sendMessage("Invalid video!!")
-        if (videoInfo.hosting === "101") return chat.sendMessage("Maaf untuk youtube tidak bisa ❌")
+          const { meta, hosting, diffConverter, mp3Converter, url, thumb } = videometa
 
-        const url = videoInfo.url
-        const media = await MessageMedia.fromUrl(url[0].url, {
-          unsafeMime: true,
-        })
+          if (videometa === undefined) return chat.sendMessage("Invalid video!!")
 
-        await chat.sendMessage(media)
-        await msg.react("👍")
+          if (hosting === "101") {
+            const videomp4 = {
+              url: diffConverter,
+              name: "MP4"
+            }
+            const videomp3 = {
+              url: mp3Converter,
+              name: "MP3"
+            }
+            videourl.push(videomp4, videomp3)
+          } else {
+            videourl = url
+          }
+
+          const videoMetadata = {
+            title: meta?.title,
+            source: getLink,
+            duration: meta?.duration,
+            thumbnail: thumb
+          }
+
+          const requestdata = {
+            from: chat?.id._serialized,
+            metadata: videoMetadata,
+            url: videourl
+          }
+          request.push(requestdata)
+
+          const media = await MessageMedia.fromUrl(thumb, { unsafeMime: true })
+          let buttons_reply = {}
+          if (hosting === "101") {
+            buttons_reply = new Buttons(
+              `🤖 *Title*: ${meta?.title}\n⏰ *Duration*: ${meta?.duration || "unknown"}\n🔗 *Source*: ${getLink}`,
+              [{
+                body: videourl[0].name,
+                id: videourl[0].name
+              }],
+              "Requested",
+              'Created by Bot')
+          } else if(hosting === "instagram.com"){
+            
+          } else {
+            buttons_reply = new Buttons(
+              `🤖 *Title*: ${meta?.title}\n⏰ *Duration*: ${meta?.duration || "unknown"}\n🔗 *Source*: ${getLink}`,
+              [{
+                body: videourl[0].name,
+                id: videourl[0].name
+              },
+              {
+                body: videourl[1]?.name,
+                id: videourl[1]?.name
+              }],
+              "Requested",
+              'Created by Bot')
+          }
+
+          await chat.sendMessage(media)
+          await chat.sendMessage(buttons_reply)
+          await msg.react("👍")
+        } catch (err) {
+          console.log(err)
+        }
       } else if (RECEIVED === "!S") {
         if (!msg.hasMedia) return msg.reply("Need a media!!");
         chat.sendStateRecording();
@@ -241,6 +326,44 @@ client.on("message", async (msg) => {
           text += `@${participant.id.user} `;
         }
         await chat.sendMessage(text, { mentions });
+      } else if (RECEIVED.endsWith(" !SEARCH")) {
+        let profileMetadatas = {}
+        const username = msg.body.split(" ")[0]
+
+        await chat.sendStateTyping()
+        await msg.reply("Sabar ya...")
+        await chat.sendStateRecording()
+
+        await ScrapUser(username, msg)
+          .then((response) => profileMetadatas = response);
+        const { videos, image, Title, Following, Followers, Likes, Subtitle, Bio, Link } = profileMetadatas
+
+        const sendlist = []
+
+        try {
+          for (const video of videos) {
+            sendlist.push({
+              title: video.title || "No title",
+              description: video.views,
+              id: video.link + ' req',
+            })
+            await chat.sendStateRecording()
+          }
+          const section = {
+            title: 'List Video',
+            rows: sendlist,
+          };
+
+          const media = await MessageMedia.fromUrl(image, { unsafeMime: true })
+          const list = new List(`*Username* : ${Title}\n*Name* : ${Subtitle}\n*Following* : ${Following}\n*Followers* : ${Followers}\n*Likes* : ${Likes}\n*Bio* : ${Bio}\n*Link* : ${Link}`, 'List Video', [section], 'Requested', 'Created by Bot')
+
+          await chat.sendMessage(media)
+          await chat.sendMessage(list)
+        } catch (err) {
+          chat.sendMessage("Error harap ulangi sekali lagi")
+        }
+
+
       }
 
       for (const buttonMenu of buttonsMenu) {
@@ -257,11 +380,35 @@ client.on("message", async (msg) => {
         }
       }
     }
+    if (msg.type === 'list_response') {
+      const req = msg.selectedRowId.split(" ")[1]
+      const link = msg.selectedRowId.split(" ")[0]
+      if (req) {
+        await chat.sendMessage(`${msg.body}\n${link}`)
+      }
+    }
+
+    if (msg.type === "buttons_response") {
+      for (let i = 0; i < request.length; i++) {
+        if (request[i].from === chat?.id._serialized) {
+          const urls = request[i].url
+          for (const url of urls) {
+            if (msg.selectedButtonId === url.name) {
+              chat.sendStateTyping()
+              const media = await MessageMedia.fromUrl(url.url, { unsafeMime: true })
+              chat.sendStateTyping()
+              chat.sendMessage("Sabar ya...")
+              client.sendMessage(chat?.id._serialized, media)
+              return request.splice(i, 1)
+            }
+          }
+        }
+      }
+    }
   } catch (err) {
     console.log(err);
   }
 });
-
 const resendMessage = async (msg) => {
   const chat = await msg.getChat()
   const quotedMsg = await msg.getQuotedMessage();

@@ -1,7 +1,9 @@
 .wwebjs_auth
 .env
 
-Database
-Chrome
+API_Twitter.txt
+
 ffmpeg
 node_modules
+.vscode/settings.json
+function/ScrappJKT48.js

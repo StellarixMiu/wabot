@@ -9,6 +9,7 @@ async function VideoDownload(link) {
       return response.data
     })
     .catch(async () => {
+      // return err
       try {
         const responseUrl = []
 
@@ -52,7 +53,6 @@ async function VideoDownload(link) {
         await browser.close();
         return response
       } catch (err) {
-        console.error(err)
         return err
       }
     });
