@@ -11,7 +11,6 @@ const { Container } = require('@nlpjs/core');
 const { SentimentAnalyzer } = require('@nlpjs/sentiment');
 const { VideoDownload } = require("./function/Downloader.js");
 const { ScrapUser } = require("./function/tiktokScrap.js");
-const { response } = require("express");
 require("dotenv").config();
 
 const client = new Client({
@@ -252,7 +251,7 @@ client.on("message", async (msg) => {
               sendList.push({
                 title: `${url.resolution} (${url.filesize})` || "No title",
                 description: title,
-                id: url.url + ' dl'+ ' yt',
+                id: url.url + ' dl' + ' yt',
               })
               await chat.sendStateRecording()
             }
@@ -304,42 +303,37 @@ client.on("message", async (msg) => {
         }
         await chat.sendMessage(text, { mentions });
       } else if (RECEIVED.endsWith(" !SEARCH")) {
-        let profileMetadatas = {}
+        let metadata = {}
         const username = msg.body.split(" ")[0]
 
-        await chat.sendStateTyping()
-        await msg.reply("Sabar ya...")
         await chat.sendStateRecording()
+        await ScrapUser(username)
+          .then((response) => metadata = response);
 
-        await ScrapUser(username, msg)
-          .then((response) => profileMetadatas = response);
-        const { videos, image, Title, Following, Followers, Likes, Subtitle, Bio, Link } = profileMetadatas
+        if (!metadata) return chat.sendMessage("Error harap ulangi sekali lagi")
+
+        const { image, Title, Following, Followers, Likes, Subtitle, Bio, Link, videos } = metadata
 
         const sendlist = []
-
-        try {
-          for (const video of videos) {
-            sendlist.push({
-              title: video.title || "No title",
-              description: video.views,
-              id: video.link + ' req',
-            })
-            await chat.sendStateRecording()
-          }
-          const section = {
-            title: 'List Video',
-            rows: sendlist,
-          };
-
-          const media = await MessageMedia.fromUrl(image, { unsafeMime: true })
-
-          const list = new List(`*Username* : ${Title}\n*Name* : ${Subtitle}\n*Following* : ${Following}\n*Followers* : ${Followers}\n*Likes* : ${Likes}\n*Bio* : ${Bio}\n*Link* : ${Link}`, 'List Video', [section], 'Requested', 'Created by Bot')
-
-          await chat.sendMessage(media)
-          await chat.sendMessage(list)
-        } catch (err) {
-          chat.sendMessage("Error harap ulangi sekali lagi")
+        for (const video of videos) {
+          sendlist.push({
+            title: video.title || 'No Title',
+            description: video.views,
+            id: video.link + ' req',
+          })
+          await chat.sendStateRecording()
         }
+
+        const section = {
+          title: 'List Video',
+          rows: sendlist,
+        };
+
+        const media = await MessageMedia.fromUrl(image, { unsafeMime: true })
+        const list = new List(`*Username* : ${Title}\n*Name* : ${Subtitle}\n*Following* : ${Following}\n*Followers* : ${Followers}\n*Likes* : ${Likes}\n*Bio* : ${Bio}\n*Link* : ${Link}`, 'List Video', [section], 'Requested', 'Created by Bot')
+
+        await chat.sendMessage(media)
+        await chat.sendMessage(list)
       }
 
       for (const buttonMenu of buttonsMenu) {
@@ -356,6 +350,7 @@ client.on("message", async (msg) => {
         }
       }
     }
+
     if (msg.type === 'list_response') {
       const type = msg.selectedRowId.split(" ")[1]
       const isYt = msg?.selectedRowId.split(" ")[2]
@@ -363,7 +358,7 @@ client.on("message", async (msg) => {
       if (type === 'req') {
         await chat.sendMessage(`${msg.body}\n${link}`)
       } else if (type === 'dl') {
-        if(isYt === 'yt'){
+        if (isYt === 'yt') {
           await chat.sendMessage(`Download link: ${link}`)
           return msg.react("👍")
         }
@@ -372,6 +367,7 @@ client.on("message", async (msg) => {
         await msg.react("👍")
       }
     }
+
   } catch (err) {
     console.log(err);
   }
