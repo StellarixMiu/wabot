@@ -1,5 +1,4 @@
 const axios = require("axios")
-const puppeteer = require("puppeteer");
 require("dotenv").config();
 const urls = process.env.URL
 
