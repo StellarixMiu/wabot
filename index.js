@@ -97,6 +97,7 @@ const stemmer = new StemmerId()
 client.on("message", async (msg) => {
   const RECEIVED = msg.body.toUpperCase()
   const chat = await msg.getChat()
+  // console.log(msg)
 
   try {
     //Owner Commands
@@ -230,79 +231,55 @@ client.on("message", async (msg) => {
         )
         await chat.sendMessage(buttonsReply)
       } else if (RECEIVED.endsWith(" !D")) {
-        await chat.sendStateRecording()
         const getLink = msg.body.split(" ")[0]
-        let videourl = []
+
+        await chat.sendStateRecording()
         try {
+          await chat.sendStateRecording()
           let videometa = {}
+
           await VideoDownload(getLink)
-            .then((response) => videometa = response)
+            .then((response) => videometa = response);
+          const { hosting, thumbnail, title, duration, urls } = videometa
 
-          const { meta, hosting, diffConverter, mp3Converter, url, thumb } = videometa
+          if (!videometa) return chat.sendMessage("Error harap ulangi sekali lagi")
 
-          if (videometa === undefined) return chat.sendMessage("Invalid video!!")
+          const sendList = []
+          await chat.sendStateRecording()
 
-          if (hosting === "101") {
-            const videomp4 = {
-              url: diffConverter,
-              name: "MP4"
+          if (hosting === 'youtube.com') {
+            for (const url of urls) {
+              sendList.push({
+                title: `${url.resolution} (${url.filesize})` || "No title",
+                description: title,
+                id: url.url + ' dl'+ ' yt',
+              })
+              await chat.sendStateRecording()
             }
-            const videomp3 = {
-              url: mp3Converter,
-              name: "MP3"
+          } else {
+            for (const url of urls) {
+              sendList.push({
+                title: url.extention || "No title",
+                description: title,
+                id: url.url + ' dl',
+              })
+              await chat.sendStateRecording()
             }
-            videourl.push(videomp4, videomp3)
-          } else {
-            videourl = url
           }
 
-          const videoMetadata = {
-            title: meta?.title,
-            source: getLink,
-            duration: meta?.duration,
-            thumbnail: thumb
-          }
+          const media = await MessageMedia.fromUrl(thumbnail, { unsafeMime: true })
 
-          const requestdata = {
-            from: chat?.id._serialized,
-            metadata: videoMetadata,
-            url: videourl
-          }
-          request.push(requestdata)
-
-          const media = await MessageMedia.fromUrl(thumb, { unsafeMime: true })
-          let buttons_reply = {}
-          if (hosting === "101") {
-            buttons_reply = new Buttons(
-              `🤖 *Title*: ${meta?.title}\n⏰ *Duration*: ${meta?.duration || "unknown"}\n🔗 *Source*: ${getLink}`,
-              [{
-                body: videourl[0].name,
-                id: videourl[0].name
-              }],
-              "Requested",
-              'Created by Bot')
-          } else if(hosting === "instagram.com"){
-            
-          } else {
-            buttons_reply = new Buttons(
-              `🤖 *Title*: ${meta?.title}\n⏰ *Duration*: ${meta?.duration || "unknown"}\n🔗 *Source*: ${getLink}`,
-              [{
-                body: videourl[0].name,
-                id: videourl[0].name
-              },
-              {
-                body: videourl[1]?.name,
-                id: videourl[1]?.name
-              }],
-              "Requested",
-              'Created by Bot')
-          }
+          const section = {
+            title: 'List Video',
+            rows: sendList,
+          };
+          const list = new List(`*Hosting* : ${hosting}\n*Title* : ${title}\n*Duration* : ${duration}\n*Link* : ${getLink}`, 'List Video', [section], 'Requested', 'Created by Bot')
 
           await chat.sendMessage(media)
-          await chat.sendMessage(buttons_reply)
+          await chat.sendMessage(list)
           await msg.react("👍")
         } catch (err) {
-          console.log(err)
+          chat.sendMessage("Error harap ulangi sekali lagi")
         }
       } else if (RECEIVED === "!S") {
         if (!msg.hasMedia) return msg.reply("Need a media!!");
@@ -355,6 +332,7 @@ client.on("message", async (msg) => {
           };
 
           const media = await MessageMedia.fromUrl(image, { unsafeMime: true })
+
           const list = new List(`*Username* : ${Title}\n*Name* : ${Subtitle}\n*Following* : ${Following}\n*Followers* : ${Followers}\n*Likes* : ${Likes}\n*Bio* : ${Bio}\n*Link* : ${Link}`, 'List Video', [section], 'Requested', 'Created by Bot')
 
           await chat.sendMessage(media)
@@ -362,8 +340,6 @@ client.on("message", async (msg) => {
         } catch (err) {
           chat.sendMessage("Error harap ulangi sekali lagi")
         }
-
-
       }
 
       for (const buttonMenu of buttonsMenu) {
@@ -381,34 +357,26 @@ client.on("message", async (msg) => {
       }
     }
     if (msg.type === 'list_response') {
-      const req = msg.selectedRowId.split(" ")[1]
+      const type = msg.selectedRowId.split(" ")[1]
+      const isYt = msg?.selectedRowId.split(" ")[2]
       const link = msg.selectedRowId.split(" ")[0]
-      if (req) {
+      if (type === 'req') {
         await chat.sendMessage(`${msg.body}\n${link}`)
-      }
-    }
-
-    if (msg.type === "buttons_response") {
-      for (let i = 0; i < request.length; i++) {
-        if (request[i].from === chat?.id._serialized) {
-          const urls = request[i].url
-          for (const url of urls) {
-            if (msg.selectedButtonId === url.name) {
-              chat.sendStateTyping()
-              const media = await MessageMedia.fromUrl(url.url, { unsafeMime: true })
-              chat.sendStateTyping()
-              chat.sendMessage("Sabar ya...")
-              client.sendMessage(chat?.id._serialized, media)
-              return request.splice(i, 1)
-            }
-          }
+      } else if (type === 'dl') {
+        if(isYt === 'yt'){
+          await chat.sendMessage(`Download link: ${link}`)
+          return msg.react("👍")
         }
+        const media = await MessageMedia.fromUrl(link, { unsafeMime: true })
+        await chat.sendMessage(media)
+        await msg.react("👍")
       }
     }
   } catch (err) {
     console.log(err);
   }
 });
+
 const resendMessage = async (msg) => {
   const chat = await msg.getChat()
   const quotedMsg = await msg.getQuotedMessage();
