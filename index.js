@@ -49,11 +49,11 @@ client.on("ready", async () => {
 const owner = process.env.OWNER_ID
 const bot = process.env.BOT_ID
 
-let buttonsMenu = [
+let buttons = [
   {
     body: 'Downloader',
     id: 'downloaderIDs',
-    desc: "Tiktok video🟢\nTiktok story🔴\nTiktok multi image🟢\nIG stories🟢\nIG TV/REELS🟢\nIG post🔴\nTwitter video🟢\nTwitter image🟢\nYoutube🟢",
+    desc: "Tiktok video🟢\nTiktok story🟢\nTiktok multi image🔴\nIG🟢\nTwitter🟢\nYoutube🟢",
     howTo: "Untuk menggunakan command ini silahkan sertakan link dan diakhiri dengan !d",
     examplePics: "./img/downloaderIDs.jpg",
   },
@@ -99,6 +99,7 @@ client.on("message", async (msg) => {
   // console.log(msg)
 
   try {
+
     //Owner Commands
     if (msg.from === owner || msg.author === owner) {
       const getAllChats = await client.getChats()
@@ -209,14 +210,33 @@ client.on("message", async (msg) => {
           await msg.react("👍")
           break
       }
-
     }
 
     if (msg.from !== "status@broadcast") {
       //RECEIVED MSG
       if (RECEIVED === "MENU") {
+        // const button = [
+        //   {
+        //     body: 'Search',
+        //     id: 'searchIDs',
+        //   },
+        //   {
+        //     body: 'Sticker',
+        //     id: 'stickerIDs',
+        //   },
+        //   {
+        //     body: 'Downloader',
+        //     id: 'downloaderIDs',
+        //   },
+        // ]
+        //  const buttonsReply = new Buttons(
+        //     'Untuk melihat penggunaan commands silahkan klik tombol dibawah',
+        //     button,
+        //     'Title',
+        //     'Created by Bot')
+        // await chat.sendMessage(buttonsReply)
         const button = []
-        for (const buttonMenu of buttonsMenu) {
+        for (const buttonMenu of buttons) {
           button.push({
             body: buttonMenu.body,
             id: buttonMenu.id,
@@ -272,7 +292,7 @@ client.on("message", async (msg) => {
             title: 'List Video',
             rows: sendList,
           };
-          const list = new List(`*Hosting* : ${hosting}\n*Title* : ${title}\n*Duration* : ${duration}\n*Link* : ${getLink}`, 'List Video', [section], 'Requested', 'Created by Bot')
+          const list = new List(`*Hosting* : ${hosting}\n*Title* : ${title}\n*Duration* : ${duration}\n*Link* : ${getLink}`, 'List', [section], 'Requested', 'Created by Bot')
 
           await chat.sendMessage(media)
           await chat.sendMessage(list)
@@ -336,16 +356,26 @@ client.on("message", async (msg) => {
         await chat.sendMessage(list)
       }
 
-      for (const buttonMenu of buttonsMenu) {
-        if (buttonMenu.id === msg.selectedButtonId) {
-          await chat.sendMessage(buttonMenu.desc)
-          if (buttonMenu.examplePics !== "") {
-            const media = await MessageMedia.fromFilePath(buttonMenu.examplePics)
-            await chat.sendMessage(media, {
-              caption: buttonMenu.howTo
-            })
-          } else {
-            await chat.sendMessage(buttonMenu.howTo)
+      if (msg.type === 'buttons_response') {
+        // if(msg.selectedButtonId === 'searchIDs'){
+        //   await chat.sendMessage("Search")
+        // } else if(msg.selectedButtonId === 'stickerIDs') {
+        //   await chat.sendMessage("Resend")
+        // } else if(msg.selectedButtonId === 'downloaderIDs') {
+        //   await chat.sendMessage("Downloader")
+        // }
+
+        for (const button of buttons) {
+          if (button.id === msg.selectedButtonId) {
+            if (button.examplePics !== "") {
+              const media = await MessageMedia.fromFilePath(button.examplePics)
+              await chat.sendMessage(media, {
+                caption: button.howTo
+              })
+            } else {
+              await chat.sendMessage(button.howTo)
+            }
+             return await chat.sendMessage(button.desc)
           }
         }
       }
